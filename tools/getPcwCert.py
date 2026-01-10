@@ -8,6 +8,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 import os
 from colorama import Fore, Style, init
+from pathlib import Path
 
 init(autoreset=True)
 
@@ -21,7 +22,9 @@ def get_certificate(hostname: str, port: int = 443) -> bytes:
             cert_der = ssock.getpeercert(binary_form=True)
             return cert_der
 
+
 def validate_current_wifi() -> bool:
+    """Comprueba la red WiFi mediante iwgetid; si iwgetid no existe (p. ej. en Termux), omite la comprobación y continúa."""
     try:
         result = subprocess.run(
             ['iwgetid', '-r'],
@@ -44,14 +47,16 @@ def validate_current_wifi() -> bool:
         return True
 
     except FileNotFoundError:
-        print(f"{Fore.RED}❌ iwgetid not found. Please install wireless-tools.{Style.RESET_ALL}")
-        return False
+        # En entornos como Termux no está disponible iwgetid; no abortamos la ejecución
+        print(f"{Fore.YELLOW}ℹ️  'iwgetid' no encontrado. Omitiendo la comprobación de WiFi (usando Termux o entorno sin wireless-tools).{Style.RESET_ALL}")
+        return True
     except subprocess.CalledProcessError:
         print(f"{Fore.RED}❌ Error checking WiFi connection.{Style.RESET_ALL}")
         return False
     except Exception as e:
         print(f"{Fore.RED}❌ Unexpected error checking WiFi: {e}{Style.RESET_ALL}")
         return False
+
 
 def get_certificate_info(cert_der: bytes) -> dict:
     """Extrae información del certificado."""
@@ -79,24 +84,26 @@ def get_certificate_info(cert_der: bytes) -> dict:
         "cert_pem": cert.public_bytes(serialization.Encoding.PEM).decode(),
     }
 
+
 def save_certificate(cert_info: dict, base_filename: str = "pcw_cert"):
-    """Guarda el certificado en varios formatos."""
-    cert_dir = "cert"
+    """Guarda el certificado en varios formatos en el directorio `cert/` relativo a la raíz del proyecto."""
+    base_dir = Path(__file__).resolve().parents[1]
+    cert_dir = base_dir / "cert"
     os.makedirs(cert_dir, exist_ok=True)
-    base_path = os.path.join(cert_dir, base_filename)
+    base_path = cert_dir / base_filename
 
     # Guardar PEM
-    with open(f"{base_path}.pem", "w") as f:
+    with open(base_path.with_suffix('.pem'), "w") as f:
         f.write(cert_info["cert_pem"])
-    print(f"{Fore.CYAN}✓ Guardado: {base_path}.pem{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}✓ Guardado: {base_path.with_suffix('.pem')}{Style.RESET_ALL}")
 
     # Guardar DER
-    with open(f"{base_path}.der", "wb") as f:
+    with open(base_path.with_suffix('.der'), "wb") as f:
         f.write(cert_info["cert_der"])
-    print(f"{Fore.CYAN}✓ Guardado: {base_path}.der{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}✓ Guardado: {base_path.with_suffix('.der')}{Style.RESET_ALL}")
 
     # Guardar info como texto
-    with open(f"{base_path}_info.txt", "w") as f:
+    with open(base_path.with_name(base_path.name + "_info.txt"), "w") as f:
         f.write(f"Subject: {cert_info['subject']}\n")
         f.write(f"Issuer: {cert_info['issuer']}\n")
         f.write(f"Serial: {cert_info['serial_number']}\n")
@@ -104,7 +111,8 @@ def save_certificate(cert_info: dict, base_filename: str = "pcw_cert"):
         f.write(f"Valid Until: {cert_info['not_valid_after']}\n")
         f.write(f"SHA-256: {cert_info['sha256_formatted']}\n")
         f.write(f"SHA-1: {cert_info['sha1_fingerprint']}\n")
-    print(f"{Fore.CYAN}✓ Guardado: {base_path}_info.txt{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}✓ Guardado: {base_path.with_name(base_path.name + '_info.txt')}{Style.RESET_ALL}")
+
 
 def run():
     hostname = "pcw.uabc.mx"

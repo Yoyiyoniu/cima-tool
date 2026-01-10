@@ -1,4 +1,11 @@
 import argparse
+from pathlib import Path
+import sys
+
+BASE_DIR = Path(__file__).resolve().parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 import tools.getPcwCert as getPcwCert
 import tools.InteractiveRunner as InteractiveRunner
 
@@ -9,8 +16,6 @@ def main():
     )
 
     parser.add_argument("--cert", "-c", action="store_true", help="Get PCW certificate")
-
-    #TODO: Add
 
     args = parser.parse_args()
 
