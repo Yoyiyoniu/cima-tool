@@ -1,5 +1,8 @@
 from colorama import Fore, Style, init
 
+import tools.getPcwCert as getPcwCert
+import tools.getPcwIp as getPcwIp
+
 def run():
     init(autoreset=True)
     print(f"{Fore.RED}━━━━━━━━{Fore.GREEN}  乃丫 ㄚㄖ丫ㄖⲌ  {Fore.RED}━━━━━━━━{Style.RESET_ALL}")
@@ -14,8 +17,9 @@ def run():
         opc = input(f"{Fore.CYAN}CIMA-TOOL> {Style.RESET_ALL}").strip().lower()
 
         if opc == "1":
-            import tools.getPcwCert as getPcwCert
             getPcwCert.run()
+        elif opc == "2":
+            getPcwIp.run()
 
         elif opc in ["exit", "quit"]:
             print(f"{Fore.GREEN}Exiting CIMA-TOOL. Goodbye!{Style.RESET_ALL}")
@@ -23,7 +27,10 @@ def run():
 
 def options_menu():
     print(f"{Fore.GREEN}\nAvailable Commands:{Style.RESET_ALL}")
-    print(f" 1. Get Pcw Certificate")
+    print("""
+    1. Get Pcw Certificate
+    2. Get Pcw IP
+    """)
 
     print(f" exit or quit - Exit the tool")
 
